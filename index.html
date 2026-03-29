@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asteder - Gudenå Podcast Map</title>
+    
+    <!-- ArcGIS Maps SDK for JavaScript -->
+    <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.28/"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Header */
+        #header {
+            background: linear-gradient(135deg, #2C5F2D 0%, #4A7C59 100%);
+            color: white;
+            padding: 12px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        #header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        #header p {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+        
+        /* Main content container */
+        #mainContent {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        /* Sidebar Navigator */
+        #sidebar {
+            width: 200px;
+            background: #f8fafc;
+            border-right: 2px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 900;
+        }
+        
+        .sidebar-header {
+            padding: 12px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            text-align: center;
+        }
+        
+        #episodeList {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+        
+        .episode-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #475569;
+        }
+        
+        .episode-item:hover {
+            background: white;
+            border-left-color: #94a3b8;
+        }
+        
+        .episode-item.active {
+            background: white;
+            border-left-color: #475569;
+            color: #1e293b;
+            font-weight: 500;
+        }
+        
+        .episode-number {
+            display: block;
+            font-size: 10px;
+            color: #94a3b8;
+            margin-bottom: 2px;
+        }
+        
+        .episode-item.active .episode-number {
+            color: #475569;
+        }
+        
+        /* Map Container */
+        #viewDiv {
+            flex: 1;
+            position: relative;
+        }
+        
+        /* Audio Player Panel - Fixed at bottom */
+        #audioPanel {
+            background: white;
+            border-top: 3px solid #64748b;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+            padding: 20px 24px;
+            display: none;
+            z-index: 999;
+            height: 220px;
+            overflow: hidden;
+        }
+        
+        #audioPanel.visible {
+            display: block;
+        }
+        
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .player-title {
+            flex: 1;
+        }
+        
+        .player-title h3 {
+            font-size: 18px;
+            color: #1e293b;
+            margin: 0 0 4px 0;
+            font-weight: 600;
+        }
+        
+        .player-title .downloads {
+            font-size: 13px;
+            color: #64748b;
+        }
+        
+        .close-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            margin-left: 16px;
+        }
+        
+        .close-btn:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+        
+        #playerContainer {
+            width: 100%;
+            margin-top: 8px;
+        }
+        
+        /* Navigation buttons */
+        .nav-buttons {
+            padding: 12px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .nav-btn {
+            flex: 1;
+            padding: 8px;
+            background: #64748b;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .nav-btn:hover:not(:disabled) {
+            background: #475569;
+        }
+        
+        .nav-btn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+        
+        /* Loading spinner */
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 24px 32px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #64748b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Scrollbar styling */
+        #episodeList::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        #episodeList::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        
+        #episodeList::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        
+        #episodeList::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Mobile hamburger menu */
+        #menuToggle {
+            display: none;
+            position: fixed;
+            top: 70px;
+            left: 12px;
+            z-index: 1001;
+            background: white;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            cursor: pointer;
+            font-size: 20px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            #sidebar {
+                position: fixed;
+                left: -200px;
+                top: 60px;
+                bottom: 220px;
+                transition: left 0.3s;
+                box-shadow: 4px 0 12px rgba(0,0,0,0.1);
+            }
+            
+            #sidebar.open {
+                left: 0;
+            }
+            
+            #menuToggle {
+                display: block;
+            }
+            
+            #header h1 {
+                font-size: 18px;
+            }
+            
+            #header p {
+                font-size: 11px;
+            }
+            
+            #audioPanel {
+                padding: 16px;
+                height: 200px;
+            }
+            
+            .player-title h3 {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div id="header">
+        <h1>Asteder - Gudenå Podcast Map</h1>
+        <p>Navigate through podcast episodes along the river</p>
+    </div>
+    
+    <!-- Mobile menu toggle -->
+    <button id="menuToggle" onclick="toggleSidebar()">☰</button>
+    
+    <!-- Main Content -->
+    <div id="mainContent">
+        <!-- Sidebar Navigator -->
+        <div id="sidebar">
+            <div class="sidebar-header">
+                EPISODES
+            </div>
+            <div id="episodeList">
+                <!-- Episodes will be loaded here -->
+            </div>
+            <div class="nav-buttons">
+                <button class="nav-btn" id="prevBtn" onclick="navigatePrevious()">← Prev</button>
+                <button class="nav-btn" id="nextBtn" onclick="navigateNext()">Next →</button>
+            </div>
+        </div>
+        
+        <!-- Map -->
+        <div id="viewDiv">
+            <!-- Loading Spinner -->
+            <div id="loading">
+                <div class="spinner"></div>
+                <span>Loading map...</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Audio Player Panel -->
+    <div id="audioPanel">
+        <div class="player-header">
+            <div class="player-title">
+                <h3 id="episodeTitle">Episode Title</h3>
+                <span class="downloads" id="episodeDownloads"></span>
+            </div>
+            <button class="close-btn" onclick="closePlayer()" title="Close player">×</button>
+        </div>
+        <div id="playerContainer"></div>
+    </div>
+    
+    <script>
+        require([
+            "esri/WebMap",
+            "esri/views/MapView",
+            "esri/layers/FeatureLayer",
+            "esri/widgets/Legend",
+            "esri/widgets/ScaleBar",
+            "esri/widgets/Expand"
+        ], function(WebMap, MapView, FeatureLayer, Legend, ScaleBar, Expand) {
+            
+            // Load Web Map from ArcGIS Online
+            const webmap = new WebMap({
+                portalItem: {
+                    id: "28cbdfd16ee14463b5e537e734c63b4f"
+                }
+            });
+            
+            // Create MapView
+            const view = new MapView({
+                container: "viewDiv",
+                map: webmap,
+                constraints: {
+                    minZoom: 8,
+                    maxZoom: 16
+                }
+            });
+            
+            let podcastLayer = null;
+            let highlightHandle = null;
+            let allEpisodes = [];
+            let currentEpisodeIndex = 0;
+            
+            view.when(function() {
+                document.getElementById("loading").style.display = "none";
+                
+                // Find podcast layer
+                webmap.layers.forEach(function(layer) {
+                    if (layer.title && layer.title.toLowerCase().includes("podcast")) {
+                        podcastLayer = layer;
+                    }
+                });
+                
+                // Load all episodes
+                if (podcastLayer) {
+                    loadEpisodes();
+                }
+                
+                // Add Legend widget (compact, collapsible)
+                const legend = new Legend({
+                    view: view,
+                    style: "card"
+                });
+                
+                const legendExpand = new Expand({
+                    view: view,
+                    content: legend,
+                    expanded: false,
+                    expandIconClass: "esri-icon-layer-list",
+                    expandTooltip: "Legend"
+                });
+                view.ui.add(legendExpand, "top-right");
+                
+                // Add ScaleBar widget
+                const scaleBar = new ScaleBar({
+                    view: view,
+                    unit: "metric"
+                });
+                view.ui.add(scaleBar, "bottom-left");
+            });
+            
+            // Click on map to select episode
+            view.on("click", function(event) {
+                view.hitTest(event).then(function(response) {
+                    if (response.results.length > 0) {
+                        const graphic = response.results[0].graphic;
+                        
+                        // Check if it's from podcast layer
+                        if (graphic.layer === podcastLayer) {
+                            // Find episode index by FID
+                            const clickedFid = graphic.attributes.fid || graphic.attributes.FID || graphic.attributes.OBJECTID;
+                            
+                            const episodeIndex = allEpisodes.findIndex(function(feature) {
+                                const fid = feature.attributes.fid || feature.attributes.FID || feature.attributes.OBJECTID;
+                                return fid === clickedFid;
+                            });
+                            
+                            if (episodeIndex !== -1) {
+                                selectEpisode(episodeIndex);
+                            }
+                        }
+                    }
+                });
+            });
+            
+            // Change cursor on hover over podcast points
+            view.on("pointer-move", function(event) {
+                view.hitTest(event).then(function(response) {
+                    if (response.results.length > 0) {
+                        const graphic = response.results[0].graphic;
+                        if (graphic.layer === podcastLayer) {
+                            view.container.style.cursor = "pointer";
+                        } else {
+                            view.container.style.cursor = "default";
+                        }
+                    } else {
+                        view.container.style.cursor = "default";
+                    }
+                });
+            });
+            
+            function loadEpisodes() {
+                const query = podcastLayer.createQuery();
+                query.where = "1=1";
+                query.outFields = ["*"];
+                query.orderByFields = ["fid ASC"];
+                
+                podcastLayer.queryFeatures(query).then(function(result) {
+                    allEpisodes = result.features;
+                    
+                    // Populate sidebar
+                    const listContainer = document.getElementById("episodeList");
+                    listContainer.innerHTML = "";
+                    
+                    allEpisodes.forEach(function(feature, index) {
+                        const attrs = feature.attributes;
+                        const div = document.createElement("div");
+                        div.className = "episode-item";
+                        div.dataset.index = index;
+                        
+                        // Extract episode number from name
+                        const match = attrs.name.match(/#(\d+)/);
+                        const episodeNum = match ? match[1] : (index + 1);
+                        
+                        div.innerHTML = `
+                            <span class="episode-number">Episode ${episodeNum}</span>
+                            ${attrs.name.split('(#')[0].trim()}
+                        `;
+                        
+                        div.onclick = function() {
+                            selectEpisode(index);
+                        };
+                        
+                        listContainer.appendChild(div);
+                    });
+                    
+                    // Auto-select first episode
+                    if (allEpisodes.length > 0) {
+                        selectEpisode(0);
+                    }
+                });
+            }
+            
+            function selectEpisode(index) {
+                if (index < 0 || index >= allEpisodes.length) return;
+                
+                currentEpisodeIndex = index;
+                const feature = allEpisodes[index];
+                const attrs = feature.attributes;
+                
+                // Update sidebar selection
+                document.querySelectorAll('.episode-item').forEach(function(item, i) {
+                    if (i === index) {
+                        item.classList.add('active');
+                        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+                
+                // Update navigation buttons
+                document.getElementById('prevBtn').disabled = (index === 0);
+                document.getElementById('nextBtn').disabled = (index === allEpisodes.length - 1);
+                
+                // Show audio player
+                showAudioPlayer(attrs);
+                
+                // Remove previous highlight
+                if (highlightHandle) {
+                    highlightHandle.remove();
+                }
+                
+                // Highlight selected feature
+                view.whenLayerView(podcastLayer).then(function(layerView) {
+                    highlightHandle = layerView.highlight(feature);
+                });
+                
+                // Zoom to episode location
+                view.goTo({
+                    target: feature.geometry,
+                    zoom: 11
+                }, {
+                    duration: 1000
+                });
+            }
+            
+            function showAudioPlayer(attributes) {
+                const panel = document.getElementById("audioPanel");
+                const titleEl = document.getElementById("episodeTitle");
+                const downloadsEl = document.getElementById("episodeDownloads");
+                const playerContainer = document.getElementById("playerContainer");
+                
+                // Extract episode name
+                const fullName = attributes.name || "Unknown Episode";
+                titleEl.textContent = fullName;
+                
+                // Show downloads
+                if (attributes.downloads) {
+                    downloadsEl.textContent = `${attributes.downloads} downloads`;
+                } else {
+                    downloadsEl.textContent = "";
+                }
+                
+                // Get Podbean share link
+                const shareLink = attributes.link;
+                
+                if (shareLink) {
+                    // Extract episode ID from share link
+                    const episodeId = shareLink.split('/').pop().replace('pb-', '');
+                    
+                    // Create correct Podbean embed URL
+                    const embedUrl = `https://www.podbean.com/player-v2/?from=embed&i=${episodeId}-pb&square=1&share=1&download=1&fonts=Arial&skin=1&font-color=auto&btn-skin=7&size=300`;
+                    
+                    // Create iframe
+                    playerContainer.innerHTML = `
+                        <iframe 
+                            title="${fullName}" 
+                            allowtransparency="true" 
+                            height="160" 
+                            width="100%" 
+                            style="border: none; min-width: min(100%, 430px);" 
+                            scrolling="no" 
+                            src="${embedUrl}" 
+                            loading="lazy" 
+                            allowfullscreen="">
+                        </iframe>
+                    `;
+                } else {
+                    playerContainer.innerHTML = '<p style="color: #64748b;">Audio player not available</p>';
+                }
+                
+                // Show panel
+                panel.classList.add("visible");
+            }
+            
+            window.navigatePrevious = function() {
+                if (currentEpisodeIndex > 0) {
+                    selectEpisode(currentEpisodeIndex - 1);
+                }
+            };
+            
+            window.navigateNext = function() {
+                if (currentEpisodeIndex < allEpisodes.length - 1) {
+                    selectEpisode(currentEpisodeIndex + 1);
+                }
+            };
+            
+            window.closePlayer = function() {
+                const panel = document.getElementById("audioPanel");
+                panel.classList.remove("visible");
+                
+                // Remove highlight when closing player
+                if (highlightHandle) {
+                    highlightHandle.remove();
+                    highlightHandle = null;
+                }
+                
+                // Deselect in sidebar
+                document.querySelectorAll('.episode-item').forEach(function(item) {
+                    item.classList.remove('active');
+                });
+                
+                // Zoom out to show all
+                if (podcastLayer) {
+                    const query = podcastLayer.createQuery();
+                    query.where = "1=1";
+                    podcastLayer.queryExtent(query).then(function(result) {
+                        if (result.extent) {
+                            view.goTo(result.extent.expand(1.1));
+                        }
+                    });
+                }
+            };
+            
+            window.toggleSidebar = function() {
+                const sidebar = document.getElementById('sidebar');
+                sidebar.classList.toggle('open');
+            };
+        });
+    </script>
+</body>
+</html>
