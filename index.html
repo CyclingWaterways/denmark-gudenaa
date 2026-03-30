@@ -128,10 +128,10 @@
             background: white;
             border-top: 3px solid #64748b;
             box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
-            padding: 12px 16px;
+            padding: 10px 14px;
             display: none;
             z-index: 999;
-            height: 280px;
+            height: 200px;
             overflow: hidden;
         }
         
@@ -290,7 +290,7 @@
                 left: -250px;
                 top: 60px;
                 bottom: 0;
-                height: calc(100dvh - 60px - 250px);
+                height: calc(100dvh - 60px - 180px);
                 transition: left 0.3s;
                 box-shadow: 4px 0 12px rgba(0,0,0,0.1);
             }
@@ -313,22 +313,22 @@
             
             #audioPanel {
                 padding: 8px 12px;
-                height: 250px;
+                height: 180px;
             }
             
             #audioPanel iframe {
-                height: 230px !important;
+                height: 165px !important;
             }
         }
         
         /* Tablet/iPad specific */
         @media (min-width: 769px) and (max-width: 1024px) {
             #audioPanel {
-                height: 270px;
+                height: 190px;
             }
             
             #audioPanel iframe {
-                height: 250px !important;
+                height: 170px !important;
             }
         }
     </style>
@@ -653,7 +653,7 @@
                         <iframe 
                             title="${fullName}" 
                             allowtransparency="true" 
-                            height="300" 
+                            height="180" 
                             width="100%" 
                             style="border: none; min-width: min(100%, 430px);" 
                             scrolling="no" 
