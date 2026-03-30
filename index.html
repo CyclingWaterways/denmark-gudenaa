@@ -45,6 +45,36 @@
             margin-top: 2px;
         }
         
+        /* Language Selector */
+        .language-selector {
+            position: absolute;
+            top: 12px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+            z-index: 1001;
+        }
+        
+        .language-selector img {
+            width: 28px;
+            height: 20px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            border-radius: 3px;
+            transition: all 0.2s;
+            opacity: 0.7;
+        }
+        
+        .language-selector img:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        
+        .language-selector img.active {
+            border-color: white;
+            opacity: 1;
+        }
+        
         /* Main content container */
         #mainContent {
             flex: 1;
@@ -285,6 +315,17 @@
         
         /* Responsive */
         @media (max-width: 768px) {
+            .language-selector {
+                top: 8px;
+                right: 12px;
+                gap: 6px;
+            }
+            
+            .language-selector img {
+                width: 24px;
+                height: 17px;
+            }
+            
             #sidebar {
                 position: fixed;
                 left: -250px;
@@ -335,8 +376,24 @@
 <body>
     <!-- Header -->
     <div id="header">
-        <h1>Asteder - Gudenå Podcast Map</h1>
-        <p>Navigate through podcast episodes along the river</p>
+        <h1 id="headerTitle">Asteder - Gudenå Podcast Map</h1>
+        <p id="headerSubtitle">Navigate through podcast episodes along the river</p>
+        
+        <!-- Language Selector -->
+        <div class="language-selector">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Crect width='60' height='30' fill='%23012169'/%3E%3Cpath d='M0,0 L60,30 M60,0 L0,30' stroke='%23fff' stroke-width='6'/%3E%3Cpath d='M0,0 L60,30 M60,0 L0,30' stroke='%23C8102E' stroke-width='4'/%3E%3Cpath d='M30,0 v30 M0,15 h60' stroke='%23fff' stroke-width='10'/%3E%3Cpath d='M30,0 v30 M0,15 h60' stroke='%23C8102E' stroke-width='6'/%3E%3C/svg%3E" 
+                 alt="English" 
+                 class="lang-flag active" 
+                 data-lang="en"
+                 onclick="setLanguage('en')"
+                 title="English">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 37 28'%3E%3Crect width='37' height='28' fill='%23C8102E'/%3E%3Cpath d='M0,12 h37 M12,0 v28' stroke='%23fff' stroke-width='4'/%3E%3C/svg%3E" 
+                 alt="Dansk" 
+                 class="lang-flag" 
+                 data-lang="da"
+                 onclick="setLanguage('da')"
+                 title="Dansk">
+        </div>
     </div>
     
     <!-- Mobile menu toggle -->
@@ -346,7 +403,7 @@
     <div id="mainContent">
         <!-- Sidebar Navigator -->
         <div id="sidebar">
-            <div class="sidebar-header">
+            <div class="sidebar-header" id="sidebarHeader">
                 EPISODES
             </div>
             <div id="episodeList">
@@ -363,7 +420,7 @@
             <!-- Loading Spinner -->
             <div id="loading">
                 <div class="spinner"></div>
-                <span>Loading map...</span>
+                <span id="loadingText">Loading map...</span>
             </div>
         </div>
     </div>
@@ -379,6 +436,74 @@
         </div>
         <div id="playerContainer"></div>
     </div>
+    
+    <script>
+        // Translations
+        const translations = {
+            en: {
+                headerTitle: "Asteder - Gudenå Podcast Map",
+                headerSubtitle: "Navigate through podcast episodes along the river",
+                episodes: "EPISODES",
+                prev: "← Prev",
+                next: "Next →",
+                loading: "Loading map...",
+                closePlayer: "Close player"
+            },
+            da: {
+                headerTitle: "Asteder - Gudenå Podcast Kort",
+                headerSubtitle: "Naviger gennem podcast episoder langs floden",
+                episodes: "EPISODER",
+                prev: "← Forrige",
+                next: "Næste →",
+                loading: "Indlæser kort...",
+                closePlayer: "Luk afspiller"
+            }
+        };
+        
+        let currentLanguage = 'en';
+        
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            
+            // Update flag active state
+            document.querySelectorAll('.lang-flag').forEach(flag => {
+                if (flag.dataset.lang === lang) {
+                    flag.classList.add('active');
+                } else {
+                    flag.classList.remove('active');
+                }
+            });
+            
+            // Update UI texts
+            const t = translations[lang];
+            document.getElementById('headerTitle').textContent = t.headerTitle;
+            document.getElementById('headerSubtitle').textContent = t.headerSubtitle;
+            
+            const sidebarHeader = document.getElementById('sidebarHeader');
+            if (sidebarHeader) sidebarHeader.textContent = t.episodes;
+            
+            const prevBtn = document.getElementById('prevBtn');
+            if (prevBtn) prevBtn.textContent = t.prev;
+            
+            const nextBtn = document.getElementById('nextBtn');
+            if (nextBtn) nextBtn.textContent = t.next;
+            
+            const closeBtn = document.querySelector('.close-btn');
+            if (closeBtn) closeBtn.title = t.closePlayer;
+            
+            const loadingText = document.getElementById('loadingText');
+            if (loadingText) loadingText.textContent = t.loading;
+            
+            // Save preference
+            localStorage.setItem('asteder_language', lang);
+        }
+        
+        // Load saved language on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedLang = localStorage.getItem('asteder_language') || 'en';
+            setLanguage(savedLang);
+        });
+    </script>
     
     <script>
         require([
