@@ -50,6 +50,7 @@
             flex: 1;
             display: flex;
             overflow: hidden;
+            height: calc(100vh - 60px); /* Altezza viewport meno header */
         }
         
         /* Sidebar Navigator */
@@ -126,7 +127,8 @@
             padding: 12px 16px;
             display: none;
             z-index: 999;
-            height: 320px;
+            height: min(320px, 35vh);
+            max-height: 320px;
             overflow: hidden;
             position: relative;
         }
@@ -285,7 +287,8 @@
                 position: fixed;
                 left: -250px;
                 top: 60px;
-                bottom: 300px;
+                bottom: 0;
+                height: calc(100vh - 60px - min(320px, 35vh));
                 transition: left 0.3s;
                 box-shadow: 4px 0 12px rgba(0,0,0,0.1);
             }
@@ -307,24 +310,28 @@
             }
             
             #audioPanel {
-                padding: 12px 16px;
-                height: 300px;
+                padding: 10px 14px;
+                height: min(300px, 40vh);
+                max-height: 300px;
             }
             
             #audioPanel iframe {
-                height: 275px !important;
+                height: calc(100% - 50px) !important;
+                max-height: 275px;
             }
         }
         
         /* Tablet/iPad specific */
         @media (min-width: 769px) and (max-width: 1024px) {
             #audioPanel {
-                padding: 16px 20px;
-                height: 300px;
+                padding: 14px 18px;
+                height: min(310px, 38vh);
+                max-height: 310px;
             }
             
             #audioPanel iframe {
-                height: 260px !important;
+                height: calc(100% - 50px) !important;
+                max-height: 270px;
             }
         }
     </style>
