@@ -647,30 +647,18 @@
             #audioPanel.expanded .player-embed { height: 170px; }
             #playerContainer { padding: 0 12px 8px; }
 
-            /* Sidebar — hidden by default on mobile, slides up above player */
+            /* Sidebar — slides from left, bottom adapts to player */
             #sidebar {
                 position: fixed;
-                left: 0;
-                right: 0;
+                left: calc(-1 * var(--sidebar-width));
+                top: var(--header-height);
                 bottom: 0;
-                top: auto;
-                width: 100%;
-                height: 45dvh;
-                max-height: 45dvh;
-                transform: translateY(100%);
-                transition: transform var(--transition-smooth);
-                border-right: none;
-                border-top: 1px solid var(--color-sand-dark);
-                border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-                box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
-                z-index: 995;
+                width: var(--sidebar-width);
+                z-index: 980;
+                transition: left var(--transition-smooth), bottom var(--transition-smooth);
             }
 
-            #sidebar.open {
-                transform: translateY(0);
-            }
-
-            /* When player is open, sidebar sits above it */
+            /* When player is open, sidebar stops above it */
             body.player-open #sidebar {
                 bottom: var(--player-height-compact);
             }
@@ -679,33 +667,12 @@
                 bottom: var(--player-height-expanded);
             }
 
-            /* Show a drag-handle style header on mobile sidebar */
-            .sidebar-header {
-                text-align: center;
-                position: relative;
-            }
-
-            .sidebar-header::before {
-                content: '';
-                display: block;
-                width: 36px;
-                height: 4px;
-                background: var(--color-sand-dark);
-                border-radius: 2px;
-                margin: 0 auto 10px;
-            }
-
             #sidebar .nav-buttons { display: none; }
         }
 
-        /* Desktop: hide overlay and mobile-only elements */
+        /* Desktop: hide overlay */
         @media (min-width: 1025px) {
             .sidebar-overlay { display: none !important; }
-            .list-btn { display: none; }
-        }
-
-        @media (min-width: 769px) {
-            .list-btn { display: none; }
         }
 
         /* ========================================
@@ -786,9 +753,6 @@
                 <span id="episodeDownloads"></span>
             </div>
             <div class="player-actions" onclick="event.stopPropagation()">
-                <button class="expand-btn list-btn" onclick="toggleSidebar()" aria-label="Episode list" title="Episodes">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
-                </button>
                 <button class="expand-btn" onclick="togglePlayerExpand()" aria-label="Expand player" title="Expand">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
                 </button>
